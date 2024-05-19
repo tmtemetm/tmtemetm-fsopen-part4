@@ -1,0 +1,9 @@
+POST http://localhost:3003/api/blogs
+Content-Type: application/json
+
+{
+  "title": "Blog Title",
+  "author": "tmtemetm",
+  "url": "https://github.com/tmtemetm/tmtemetm-fsopen-part4#readme",
+  "likes": 1337
+}
