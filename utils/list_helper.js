@@ -25,9 +25,21 @@ const mostBlogs = blogs => {
   }
 }
 
+const mostLikes = blogs => {
+  const mostLikesAccumulator = (accumulator, blogs, author) => {
+    const likes = _.sumBy(blogs, blog => blog.likes)
+    if (!accumulator || likes > accumulator.likes) {
+      return { author, likes }
+    }
+    return accumulator
+  }
+  return _.reduce(_.groupBy(blogs, blog => blog.author), mostLikesAccumulator, null)
+}
+
 module.exports = {
   dummy,
   totalLikes,
   favoriteBlog,
-  mostBlogs
+  mostBlogs,
+  mostLikes
 }
