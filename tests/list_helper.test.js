@@ -29,3 +29,19 @@ describe('total likes', () => {
       + blogsForTest[2].likes)
   })
 })
+
+describe('favorite blog', () => {
+  test('of an empty list is null', () => {
+    assert.strictEqual(listHelper.favoriteBlog([]), null)
+  })
+
+  test('of a single blog equals that blog', () => {
+    assert.deepStrictEqual(listHelper.favoriteBlog([blogsForTest[0]]),
+      blogsForTest[0])
+  })
+
+  test('of a list of blogs returns the correct blog', () => {
+    assert.deepStrictEqual(listHelper.favoriteBlog(blogsForTest.slice(0, 4)),
+      blogsForTest[2])
+  })
+})
