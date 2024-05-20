@@ -45,3 +45,23 @@ describe('favorite blog', () => {
       blogsForTest[2])
   })
 })
+
+describe('most blogs', () => {
+  test('of an empty list is null', () => {
+    assert.strictEqual(listHelper.mostBlogs([]), null)
+  })
+
+  test('of a single blog equals the author and count 1', () => {
+    assert.deepStrictEqual(listHelper.mostBlogs([blogsForTest[0]]), {
+      author: blogsForTest[0].author,
+      blogs: 1
+    })
+  })
+
+  test('of a list of blogs returns the correct author and count', () => {
+    assert.deepStrictEqual(listHelper.mostBlogs(blogsForTest), {
+      author: 'Robert C. Martin',
+      blogs: 3
+    })
+  })
+})
