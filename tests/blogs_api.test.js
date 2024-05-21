@@ -171,6 +171,61 @@ describe('DELETE /api/blogs/:id', () => {
   })
 })
 
+describe('PUT /api/blogs/:id', () => {
+  const updatedBlog = {
+    title: 'This title is not in the database yet',
+    author: 'Or this author',
+    url: 'http://localhost/nor/this/url',
+    likes: 110101119
+  }
+
+  test('response status 200 and Content-Type application/json', async () => {
+    const id = (await blogsInDb())[0].id
+    await api.put(`/api/blogs/${id}`)
+      .send(updatedBlog)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+  })
+
+  test('does not create a new blog', async () => {
+    const initialNumber = (await blogsInDb()).length
+    const id = (await blogsInDb())[0].id
+    await api.put(`/api/blogs/${id}`)
+      .send(updatedBlog)
+    assert.strictEqual((await blogsInDb()).length, initialNumber)
+  })
+
+  test('updates the blog', async () => {
+    const id = (await blogsInDb())[0].id
+    await api.put(`/api/blogs/${id}`)
+      .send(updatedBlog)
+    const blog = (await blogsInDb())
+      .find(blog => blog.id === id)
+    assert.deepStrictEqual(blog, { ...updatedBlog, id })
+  })
+
+  test('returns the updated blog', async () => {
+    const id = (await blogsInDb())[0].id
+    const response = await api.put(`/api/blogs/${id}`)
+      .send(updatedBlog)
+    assert.deepStrictEqual(response.body, { ...updatedBlog, id })
+  })
+
+  test('nonexisting id returns 404', async () => {
+    const initialNumber = (await blogsInDb()).length
+    await api.put(`/api/blogs/${await nonExistingId()}`)
+      .send(updatedBlog)
+      .expect(404)
+    assert.strictEqual((await blogsInDb()).length, initialNumber)
+  })
+
+  test('malformatted id returns 400', async () => {
+    await api.put('/api/blogs/x')
+      .send(updatedBlog)
+      .expect(400)
+  })
+})
+
 after(async () => {
   await mongoose.connection.close()
 })
