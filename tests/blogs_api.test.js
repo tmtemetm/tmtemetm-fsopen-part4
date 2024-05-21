@@ -5,7 +5,7 @@ const supertest = require('supertest')
 const _ = require('lodash')
 const app = require('../app')
 const Blog = require('../models/blog')
-const { initialBlogs, blogsInDb } = require('./test_helper')
+const { initialBlogs, blogsInDb, nonExistingId } = require('./test_helper')
 
 const api = supertest(app)
 
@@ -129,6 +129,43 @@ describe('POST /api/blogs', () => {
     }
     await api.post('/api/blogs')
       .send(blogWithNoUrl)
+      .expect(400)
+    assert.strictEqual((await blogsInDb()).length, initialNumber)
+  })
+})
+
+describe('DELETE /api/blogs/:id', () => {
+  test('response status 204', async () => {
+    const id = (await blogsInDb())[0].id
+    await api.delete(`/api/blogs/${id}`)
+      .expect(204)
+  })
+
+  test('decreases the number of blogs', async () => {
+    const blogs = await blogsInDb()
+    const id = blogs[0].id
+    await api.delete(`/api/blogs/${id}`)
+    assert.strictEqual((await blogsInDb()).length, blogs.length - 1)
+  })
+
+  test('removes the blog', async () => {
+    const id = (await blogsInDb())[0].id
+    await api.delete(`/api/blogs/${id}`)
+    const blogIds = (await blogsInDb())
+      .map(blog => blog.id)
+    assert(!blogIds.includes(id))
+  })
+
+  test('nonexisting id returns 204', async () => {
+    const initialNumber = (await blogsInDb()).length
+    await api.delete(`/api/blogs/${await nonExistingId()}`)
+      .expect(204)
+    assert.strictEqual((await blogsInDb()).length, initialNumber)
+  })
+
+  test('malformatted id returns 400', async () => {
+    const initialNumber = (await blogsInDb()).length
+    await api.delete('/api/blogs/x')
       .expect(400)
     assert.strictEqual((await blogsInDb()).length, initialNumber)
   })
