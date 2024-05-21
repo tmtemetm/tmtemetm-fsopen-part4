@@ -5,7 +5,7 @@ const supertest = require('supertest')
 const _ = require('lodash')
 const app = require('../app')
 const Blog = require('../models/blog')
-const { initialBlogs } = require('./test_helper')
+const { initialBlogs, blogsInDb } = require('./test_helper')
 
 const api = supertest(app)
 
@@ -49,6 +49,51 @@ describe('GET /api/blogs', () => {
       assert.deepStrictEqual(_.xor(Object.keys(blog),
         ['id', 'title', 'author', 'url', 'likes']), [])
     })
+  })
+})
+
+describe('POST /api/blogs', () => {
+  const newBlog = {
+    title: 'This is a new blog that was certainly not there before',
+    author: 'Blog author',
+    url: 'http://localhost/blog',
+    likes: 1337
+  }
+
+  test('response status is 201 and content type application/json', async () => {
+    await api.post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+  })
+
+  test('increases the number of blogs', async () => {
+    const initialNumber = (await blogsInDb()).length
+    await api.post('/api/blogs')
+      .send(newBlog)
+    assert.strictEqual((await blogsInDb()).length, initialNumber + 1)
+  })
+
+  test('adds the new blog to db', async () => {
+    await api.post('/api/blogs')
+      .send(newBlog)
+    const createdBlog = (await blogsInDb())
+      .find(blog => blog.title === newBlog.title)
+    assert.notEqual(createdBlog, undefined)
+    assert.strictEqual(createdBlog.title, newBlog.title)
+    assert.strictEqual(createdBlog.author, newBlog.author)
+    assert.strictEqual(createdBlog.url, newBlog.url)
+    assert.strictEqual(createdBlog.likes, newBlog.likes)
+  })
+
+  test('returns the created blog with an id', async () => {
+    const createdBlog = (await api.post('/api/blogs')
+      .send(newBlog)).body
+    assert.strictEqual(createdBlog.title, newBlog.title)
+    assert.strictEqual(createdBlog.author, newBlog.author)
+    assert.strictEqual(createdBlog.url, newBlog.url)
+    assert.strictEqual(createdBlog.likes, newBlog.likes)
+    assert.notEqual(createdBlog.id, undefined)
   })
 })
 
