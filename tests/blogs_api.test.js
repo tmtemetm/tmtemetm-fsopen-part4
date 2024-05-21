@@ -95,6 +95,17 @@ describe('POST /api/blogs', () => {
     assert.strictEqual(createdBlog.likes, newBlog.likes)
     assert.notEqual(createdBlog.id, undefined)
   })
+
+  test('likes default to 0', async () => {
+    const blogWithNoLikes = {
+      title: 'This is a blog with no likes',
+      author: 'Unpopular author',
+      url: 'http://localhost/blog/unpopular'
+    }
+    const response = await api.post('/api/blogs')
+      .send(blogWithNoLikes)
+    assert.strictEqual(response.body.likes, 0)
+  })
 })
 
 after(async () => {
