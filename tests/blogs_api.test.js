@@ -106,6 +106,32 @@ describe('POST /api/blogs', () => {
       .send(blogWithNoLikes)
     assert.strictEqual(response.body.likes, 0)
   })
+
+  test('missing title returns 400', async () => {
+    const initialNumber = (await blogsInDb()).length
+    const blogWithNoTitle = {
+      author: 'Some author',
+      url: 'http://localhost/no/title',
+      likes: 0
+    }
+    await api.post('/api/blogs')
+      .send(blogWithNoTitle)
+      .expect(400)
+    assert.strictEqual((await blogsInDb()).length, initialNumber)
+  })
+
+  test('missing url returns 400', async () => {
+    const initialNumber = (await blogsInDb()).length
+    const blogWithNoUrl = {
+      title: 'Blog title',
+      author: 'Some author',
+      likes: 0
+    }
+    await api.post('/api/blogs')
+      .send(blogWithNoUrl)
+      .expect(400)
+    assert.strictEqual((await blogsInDb()).length, initialNumber)
+  })
 })
 
 after(async () => {
