@@ -2,6 +2,7 @@ const { test, describe, beforeEach, after } = require('node:test')
 const assert = require('node:assert')
 const mongoose = require('mongoose')
 const supertest = require('supertest')
+const _ = require('lodash')
 const app = require('../app')
 const Blog = require('../models/blog')
 const { initialBlogs } = require('./test_helper')
@@ -39,6 +40,14 @@ describe('GET /api/blogs', () => {
       assert.strictEqual(blog.author, expected.author)
       assert.strictEqual(blog.url, expected.url)
       assert.strictEqual(blog.likes, expected.likes)
+    })
+  })
+
+  test('contains the correct fields', async () => {
+    const response = await api.get('/api/blogs')
+    response.body.forEach(blog => {
+      assert.deepStrictEqual(_.xor(Object.keys(blog),
+        ['id', 'title', 'author', 'url', 'likes']), [])
     })
   })
 })
