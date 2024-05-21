@@ -1,7 +1,7 @@
 const { test, describe } = require('node:test')
 const assert = require('node:assert')
 const listHelper = require('../utils/list_helper')
-const blogsForTest = require('./blogs_for_test')
+const { initialBlogs } = require('./test_helper')
 
 test('dummy returns one', () => {
   const blogs = []
@@ -16,17 +16,17 @@ describe('total likes', () => {
   })
 
   test('of a single blog equals the likes of the blog', () => {
-    assert.strictEqual(listHelper.totalLikes([blogsForTest[0]]), blogsForTest[0].likes)
+    assert.strictEqual(listHelper.totalLikes([initialBlogs[0]]), initialBlogs[0].likes)
   })
 
   test('of a list of blogs equals the sum of blogs\' likes', () => {
     assert.strictEqual(listHelper.totalLikes([
-      blogsForTest[0],
-      blogsForTest[1],
-      blogsForTest[2]
-    ]), blogsForTest[0].likes
-      + blogsForTest[1].likes
-      + blogsForTest[2].likes)
+      initialBlogs[0],
+      initialBlogs[1],
+      initialBlogs[2]
+    ]), initialBlogs[0].likes
+      + initialBlogs[1].likes
+      + initialBlogs[2].likes)
   })
 })
 
@@ -36,13 +36,13 @@ describe('favorite blog', () => {
   })
 
   test('of a single blog equals that blog', () => {
-    assert.deepStrictEqual(listHelper.favoriteBlog([blogsForTest[0]]),
-      blogsForTest[0])
+    assert.deepStrictEqual(listHelper.favoriteBlog([initialBlogs[0]]),
+      initialBlogs[0])
   })
 
   test('of a list of blogs returns the correct blog', () => {
-    assert.deepStrictEqual(listHelper.favoriteBlog(blogsForTest.slice(0, 4)),
-      blogsForTest[2])
+    assert.deepStrictEqual(listHelper.favoriteBlog(initialBlogs.slice(0, 4)),
+      initialBlogs[2])
   })
 })
 
@@ -52,14 +52,14 @@ describe('most blogs', () => {
   })
 
   test('of a single blog equals the author and count 1', () => {
-    assert.deepStrictEqual(listHelper.mostBlogs([blogsForTest[0]]), {
-      author: blogsForTest[0].author,
+    assert.deepStrictEqual(listHelper.mostBlogs([initialBlogs[0]]), {
+      author: initialBlogs[0].author,
       blogs: 1
     })
   })
 
   test('of a list of blogs returns the correct author and count', () => {
-    assert.deepStrictEqual(listHelper.mostBlogs(blogsForTest), {
+    assert.deepStrictEqual(listHelper.mostBlogs(initialBlogs), {
       author: 'Robert C. Martin',
       blogs: 3
     })
@@ -72,14 +72,14 @@ describe('most likes', () => {
   })
 
   test('of a single blog equals the author and the likes of the blog', () => {
-    assert.deepStrictEqual(listHelper.mostLikes([blogsForTest[0]]), {
-      author: blogsForTest[0].author,
-      likes: blogsForTest[0].likes
+    assert.deepStrictEqual(listHelper.mostLikes([initialBlogs[0]]), {
+      author: initialBlogs[0].author,
+      likes: initialBlogs[0].likes
     })
   })
 
   test('of a list of blogs returns the correct author and likes', () => {
-    assert.deepStrictEqual(listHelper.mostLikes(blogsForTest), {
+    assert.deepStrictEqual(listHelper.mostLikes(initialBlogs), {
       author: 'Edsger W. Dijkstra',
       likes: 17
     })
