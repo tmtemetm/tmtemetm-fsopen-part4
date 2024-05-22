@@ -1,9 +1,7 @@
 const blogsRouter = require('express').Router()
-const jwt = require('jsonwebtoken')
 
-const config = require('../utils/config')
 const Blog = require('../models/blog')
-const User = require('../models/user')
+const { userExtractor } = require('../utils/middleware')
 
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({})
@@ -11,18 +9,8 @@ blogsRouter.get('/', async (request, response) => {
   response.json(blogs)
 })
 
-blogsRouter.post('/', async (request, response) => {
-  if (!request.token) {
-    return response.status(401)
-      .json({ error: 'authentication token missing' })
-  }
-  const decodedToken = jwt.verify(request.token, config.SECRET)
-  if (!decodedToken.id) {
-    return response.status(401)
-      .json({ error: 'token invalid' })
-  }
-  const user = await User.findById(decodedToken.id)
-
+blogsRouter.post('/', userExtractor, async (request, response) => {
+  const user = request.user
   const { title, author, url, likes } = request.body
 
   const blog = await new Blog({
@@ -41,22 +29,13 @@ blogsRouter.post('/', async (request, response) => {
     .json(blog)
 })
 
-blogsRouter.delete('/:id', async (request, response) => {
-  if (!request.token) {
-    return response.status(401)
-      .json({ error: 'authentication token missing' })
-  }
-  const decodedToken = jwt.verify(request.token, config.SECRET)
-  if (!decodedToken.id) {
-    return response.status(401)
-      .json({ error: 'token invalid' })
-  }
-
+blogsRouter.delete('/:id', userExtractor, async (request, response) => {
+  const user = request.user
   const blog = await Blog.findById(request.params.id)
   if (!blog) {
     return response.status(204).end()
   }
-  if (blog.user.toString() !== decodedToken.id.toString()) {
+  if (blog.user.toString() !== user._id.toString()) {
     return response.status(403)
       .json({ error: 'not the creator of the blog entry' })
   }
