@@ -87,6 +87,119 @@ describe('POST /api/users', async () => {
     assert.strictEqual(createdUser.name, newUser.name)
     assert.notEqual(createdUser.id, undefined)
   })
+
+  describe('username validation', () => {
+    const userMissingUsername = {
+      name: 'This user was not there',
+      password: 'correct horse battery staple'
+    }
+
+    test('missing username results in 400 and an error message', async () => {
+      const response = await api.post('/api/users')
+        .send(userMissingUsername)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+      assert(response.body.error.includes('username missing'))
+    })
+
+    test('missing username does not create a new user', async () => {
+      const initialNumber = (await usersInDb()).length
+      await api.post('/api/users')
+        .send(userMissingUsername)
+      assert.strictEqual((await usersInDb()).length, initialNumber)
+      const names = (await usersInDb())
+        .map(user => user.name)
+      assert(!names.includes(userMissingUsername.name))
+    })
+
+    const userShortUsername = { ...userMissingUsername, username: 'sh' }
+
+    test('too short username results in 400 and an error message', async () => {
+      const response = await api.post('/api/users')
+        .send(userShortUsername)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+      assert(response.body.error.includes('username too short'))
+    })
+
+    test('too short username does not create a new user', async () => {
+      const initialNumber = (await usersInDb()).length
+      await api.post('/api/users')
+        .send(userShortUsername)
+      assert.strictEqual((await usersInDb()).length, initialNumber)
+      const usernames = (await usersInDb())
+        .map(user => user.username)
+      assert(!usernames.includes(userShortUsername.username))
+    })
+
+    const userDuplicateUsername = {
+      ...userMissingUsername,
+      username: initialUsers[0].username
+    }
+
+    test('non-unique username result in 400 and an error message', async () => {
+      const response = await api.post('/api/users')
+        .send(userDuplicateUsername)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+      assert(response.body.error.includes('username already taken'))
+    })
+
+    test('non-unique username does not create a new user', async () => {
+      const initialNumber = (await usersInDb()).length
+      await api.post('/api/users')
+        .send(userDuplicateUsername)
+      assert.strictEqual((await usersInDb()).length, initialNumber)
+      const names = (await usersInDb())
+        .map(user => user.username)
+      assert(!names.includes(userDuplicateUsername.name))
+    })
+  })
+
+  describe('password validation', () => {
+    const userMissingPassword = {
+      username: 'thisuserwasnotthere',
+      name: 'This user was not there'
+    }
+
+    test('missing password results in 400 and an error message', async () => {
+      const response = await api.post('/api/users')
+        .send(userMissingPassword)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+      assert(response.body.error.includes('password missing'))
+    })
+
+    test('missing password does not create a new user', async () => {
+      const initialNumber = (await usersInDb()).length
+      await api.post('/api/users')
+        .send(userMissingPassword)
+      assert.strictEqual((await usersInDb()).length, initialNumber)
+      const usernames = (await usersInDb())
+        .map(user => user.username)
+      assert(!usernames.includes(userMissingPassword.username))
+    })
+
+    const userShortPassword = { ...userMissingPassword, password: 'sh' }
+
+    test('too short password results in 400 and an error message', async () => {
+      const response = await api.post('/api/users')
+        .send(userShortPassword)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+      assert(response.body.error.includes('password too short'))
+    })
+
+    test('too short password does not create a new user', async () => {
+      const initialNumber = (await usersInDb()).length
+      await api.post('/api/users')
+        .send(userShortPassword)
+      assert.strictEqual((await usersInDb()).length, initialNumber)
+      const usernames = (await usersInDb())
+        .map(user => user.username)
+      assert(!usernames.includes(userShortPassword.username))
+    })
+  })
 })
 
 after(async () => {
