@@ -1,10 +1,10 @@
-# Successful login (after running post_user.rest)
+# Note: Replace password (and possibly username) with a string
 POST http://localhost:3003/api/login
 Content-Type: application/json
 
 {
-  "username": "root",
-  "password": "correct horse battery staple"
+  "username": "username",
+  "password": <password>
 }
 
 ###
@@ -14,7 +14,7 @@ POST http://localhost:3003/api/login
 Content-Type: application/json
 
 {
-  "username": "root",
+  "username": "username",
   "password": "This is definitely the wrong password"
 }
 
@@ -26,5 +26,5 @@ Content-Type: application/json
 
 {
   "username": "thisisdefinitelynotavalidusername",
-  "password": "correct horse battery staple"
+  "password": <password>
 }

@@ -1,8 +1,9 @@
+# Note: Replace password with a string
 POST http://localhost:3003/api/users
 Content-Type: application/json
 
 {
-  "username": "root",
-  "name": "Superuser",
-  "password": "correct horse battery staple"
+  "username": "username",
+  "name": "User Name",
+  "password": <password>
 }
