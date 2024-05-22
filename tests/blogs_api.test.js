@@ -5,7 +5,7 @@ const supertest = require('supertest')
 const _ = require('lodash')
 const app = require('../app')
 const Blog = require('../models/blog')
-const { initialBlogs, blogsInDb, nonExistingId } = require('./test_helper')
+const { initialBlogs, blogsInDb, nonExistingId } = require('./blogs_test_helper')
 
 const api = supertest(app)
 

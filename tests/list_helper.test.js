@@ -1,7 +1,7 @@
 const { test, describe } = require('node:test')
 const assert = require('node:assert')
 const listHelper = require('../utils/list_helper')
-const { initialBlogs } = require('./test_helper')
+const { initialBlogs } = require('./blogs_test_helper')
 
 test('dummy returns one', () => {
   const blogs = []
