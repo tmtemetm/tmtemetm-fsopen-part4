@@ -6,13 +6,17 @@ const supertest = require('supertest')
 const _ = require('lodash')
 const app = require('../app')
 const User = require('../models/user')
+const Blog = require('../models/blog')
 const { initialUsers, usersInDb } = require('./users_test_helper')
+const { initialBlogs } = require('./blogs_test_helper')
 
 const api = supertest(app)
 
 beforeEach(async () => {
   await User.deleteMany({})
   await User.insertMany(initialUsers)
+  await Blog.deleteMany({})
+  await Blog.insertMany(initialBlogs)
 })
 
 describe('GET /api/users', () => {
@@ -24,10 +28,12 @@ describe('GET /api/users', () => {
 
   test('returns the right users', async () => {
     const response = await api.get('/api/users')
+    const users = await usersInDb()
     response.body.forEach((user, i) => {
-      const expected = initialUsers[i]
+      const expected = users[i]
       assert.strictEqual(user.username, expected.username)
       assert.strictEqual(user.name, expected.name)
+      assert.deepStrictEqual(user.blogs, expected.blogs)
     })
   })
 
@@ -35,7 +41,7 @@ describe('GET /api/users', () => {
     const response = await api.get('/api/users')
     response.body.forEach(user => {
       assert.deepStrictEqual(_.xor(Object.keys(user),
-        ['id', 'username', 'name']), [])
+        ['id', 'username', 'name', 'blogs']), [])
     })
   })
 

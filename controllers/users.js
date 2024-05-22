@@ -4,7 +4,8 @@ const config = require('../utils/config')
 const User = require('../models/user')
 
 usersRouter.get('/', async (request, response) => {
-  response.json(await User.find({}))
+  response.json(await User.find({})
+    .populate('blogs', { title: 1, author: 1, url: 1 }))
 })
 
 usersRouter.post('/', async (request, response) => {

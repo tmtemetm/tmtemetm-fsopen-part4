@@ -5,11 +5,15 @@ const supertest = require('supertest')
 const _ = require('lodash')
 const app = require('../app')
 const Blog = require('../models/blog')
+const User = require('../models/user')
 const { initialBlogs, blogsInDb, nonExistingId } = require('./blogs_test_helper')
+const { initialUsers } = require('./users_test_helper')
 
 const api = supertest(app)
 
 beforeEach(async () => {
+  await User.deleteMany({})
+  await User.insertMany(initialUsers)
   await Blog.deleteMany({})
   await Blog.insertMany(initialBlogs)
 })
@@ -34,12 +38,14 @@ describe('GET /api/blogs', () => {
 
   test('returns the right blogs', async () => {
     const response = await api.get('/api/blogs')
+    const blogs = await blogsInDb()
     response.body.forEach((blog, i) => {
-      const expected = initialBlogs[i]
+      const expected = blogs[i]
       assert.strictEqual(blog.title, expected.title)
       assert.strictEqual(blog.author, expected.author)
       assert.strictEqual(blog.url, expected.url)
       assert.strictEqual(blog.likes, expected.likes)
+      assert.deepStrictEqual(blog.user, expected.user)
     })
   })
 
@@ -47,7 +53,7 @@ describe('GET /api/blogs', () => {
     const response = await api.get('/api/blogs')
     response.body.forEach(blog => {
       assert.deepStrictEqual(_.xor(Object.keys(blog),
-        ['id', 'title', 'author', 'url', 'likes']), [])
+        ['id', 'title', 'author', 'url', 'likes', 'user']), [])
     })
   })
 })
@@ -196,19 +202,21 @@ describe('PUT /api/blogs/:id', () => {
   })
 
   test('updates the blog', async () => {
-    const id = (await blogsInDb())[0].id
+    const originalBlog = (await blogsInDb())[0]
+    const id = originalBlog.id
     await api.put(`/api/blogs/${id}`)
       .send(updatedBlog)
     const blog = (await blogsInDb())
       .find(blog => blog.id === id)
-    assert.deepStrictEqual(blog, { ...updatedBlog, id })
+    assert.deepStrictEqual(blog, { ...originalBlog, ...updatedBlog })
   })
 
   test('returns the updated blog', async () => {
-    const id = (await blogsInDb())[0].id
+    const originalBlog = (await blogsInDb())[0]
+    const id = originalBlog.id
     const response = await api.put(`/api/blogs/${id}`)
       .send(updatedBlog)
-    assert.deepStrictEqual(response.body, { ...updatedBlog, id })
+    assert.deepStrictEqual(response.body, { ...originalBlog, ...updatedBlog })
   })
 
   test('nonexisting id returns 404', async () => {
