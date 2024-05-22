@@ -1,0 +1,30 @@
+# Successful login (after running post_user.rest)
+POST http://localhost:3003/api/login
+Content-Type: application/json
+
+{
+  "username": "root",
+  "password": "correct horse battery staple"
+}
+
+###
+
+# Wrong password, should return 401
+POST http://localhost:3003/api/login
+Content-Type: application/json
+
+{
+  "username": "root",
+  "password": "This is definitely the wrong password"
+}
+
+###
+
+# Wrong username, should return 401
+POST http://localhost:3003/api/login
+Content-Type: application/json
+
+{
+  "username": "thisisdefinitelynotavalidusername",
+  "password": "correct horse battery staple"
+}
