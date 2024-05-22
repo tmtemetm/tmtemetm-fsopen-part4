@@ -2,12 +2,14 @@ const { test, describe, beforeEach, after } = require('node:test')
 const assert = require('node:assert')
 const mongoose = require('mongoose')
 const supertest = require('supertest')
+const jwt = require('jsonwebtoken')
 const _ = require('lodash')
+
 const app = require('../app')
 const Blog = require('../models/blog')
 const User = require('../models/user')
 const { initialBlogs, blogsInDb, nonExistingId } = require('./blogs_test_helper')
-const { initialUsers } = require('./users_test_helper')
+const { initialUsers, usersInDb, authorizationForUser } = require('./users_test_helper')
 
 const api = supertest(app)
 
@@ -58,7 +60,10 @@ describe('GET /api/blogs', () => {
   })
 })
 
-describe('POST /api/blogs', () => {
+describe('POST /api/blogs', async () => {
+  const authorizedUser = (await usersInDb())[1]
+  const authorization = await authorizationForUser(authorizedUser.id)
+
   const newBlog = {
     title: 'This is a new blog that was certainly not there before',
     author: 'Blog author',
@@ -68,6 +73,7 @@ describe('POST /api/blogs', () => {
 
   test('response status is 201 and content type application/json', async () => {
     await api.post('/api/blogs')
+      .set('Authorization', authorization)
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/)
@@ -76,12 +82,14 @@ describe('POST /api/blogs', () => {
   test('increases the number of blogs', async () => {
     const initialNumber = (await blogsInDb()).length
     await api.post('/api/blogs')
+      .set('Authorization', authorization)
       .send(newBlog)
     assert.strictEqual((await blogsInDb()).length, initialNumber + 1)
   })
 
   test('adds the new blog to db', async () => {
     await api.post('/api/blogs')
+      .set('Authorization', authorization)
       .send(newBlog)
     const createdBlog = (await blogsInDb())
       .find(blog => blog.title === newBlog.title)
@@ -90,10 +98,12 @@ describe('POST /api/blogs', () => {
     assert.strictEqual(createdBlog.author, newBlog.author)
     assert.strictEqual(createdBlog.url, newBlog.url)
     assert.strictEqual(createdBlog.likes, newBlog.likes)
+    assert.strictEqual(createdBlog.user.id, authorizedUser.id)
   })
 
   test('returns the created blog with an id', async () => {
     const createdBlog = (await api.post('/api/blogs')
+      .set('Authorization', authorization)
       .send(newBlog)).body
     assert.strictEqual(createdBlog.title, newBlog.title)
     assert.strictEqual(createdBlog.author, newBlog.author)
@@ -109,6 +119,7 @@ describe('POST /api/blogs', () => {
       url: 'http://localhost/blog/unpopular'
     }
     const response = await api.post('/api/blogs')
+      .set('Authorization', authorization)
       .send(blogWithNoLikes)
     assert.strictEqual(response.body.likes, 0)
   })
@@ -121,6 +132,7 @@ describe('POST /api/blogs', () => {
       likes: 0
     }
     await api.post('/api/blogs')
+      .set('Authorization', authorization)
       .send(blogWithNoTitle)
       .expect(400)
     assert.strictEqual((await blogsInDb()).length, initialNumber)
@@ -134,37 +146,62 @@ describe('POST /api/blogs', () => {
       likes: 0
     }
     await api.post('/api/blogs')
+      .set('Authorization', authorization)
       .send(blogWithNoUrl)
       .expect(400)
     assert.strictEqual((await blogsInDb()).length, initialNumber)
   })
+
+  describe('authorization', () => {
+    test('missing token results in 401', async () => {
+      const blogs = await blogsInDb()
+      await api.post('/api/blogs')
+        .send(newBlog)
+        .expect(401)
+      assert.deepStrictEqual(await blogsInDb(), blogs)
+    })
+
+    test('invalid token results in 401', async () => {
+      const blogs = await blogsInDb()
+      await api.post('/api/blogs')
+        .set('Authorization', jwt.sign({ id: '664e47362a784e18e56fc1fd', username: 'root' }, 'wrong secret'))
+        .send(newBlog)
+        .expect(401)
+      assert.deepStrictEqual(await blogsInDb(), blogs)
+    })
+  })
 })
 
-describe('DELETE /api/blogs/:id', () => {
+describe('DELETE /api/blogs/:id', async () => {
+  const blogToDelete = (await blogsInDb())[0]
+  const idToDelete = blogToDelete.id
+  const authorization = await authorizationForUser(blogToDelete.user.id)
+
   test('response status 204', async () => {
-    const id = (await blogsInDb())[0].id
-    await api.delete(`/api/blogs/${id}`)
+    await api.delete(`/api/blogs/${idToDelete}`)
+      .set('Authorization', authorization)
       .expect(204)
   })
 
   test('decreases the number of blogs', async () => {
-    const blogs = await blogsInDb()
-    const id = blogs[0].id
-    await api.delete(`/api/blogs/${id}`)
-    assert.strictEqual((await blogsInDb()).length, blogs.length - 1)
+    const initialNumber = (await blogsInDb()).length
+    await api.delete(`/api/blogs/${idToDelete}`)
+      .set('Authorization', authorization)
+    assert.strictEqual((await blogsInDb()).length, initialNumber - 1)
   })
 
   test('removes the blog', async () => {
-    const id = (await blogsInDb())[0].id
-    await api.delete(`/api/blogs/${id}`)
+    await api.delete(`/api/blogs/${idToDelete}`)
+      .set('Authorization', authorization)
     const blogIds = (await blogsInDb())
       .map(blog => blog.id)
-    assert(!blogIds.includes(id))
+    assert(!blogIds.includes(idToDelete))
   })
 
   test('nonexisting id returns 204', async () => {
     const initialNumber = (await blogsInDb()).length
     await api.delete(`/api/blogs/${await nonExistingId()}`)
+      .set('Authorization', authorization)
       .expect(204)
     assert.strictEqual((await blogsInDb()).length, initialNumber)
   })
@@ -172,8 +209,35 @@ describe('DELETE /api/blogs/:id', () => {
   test('malformatted id returns 400', async () => {
     const initialNumber = (await blogsInDb()).length
     await api.delete('/api/blogs/x')
+      .set('Authorization', authorization)
       .expect(400)
     assert.strictEqual((await blogsInDb()).length, initialNumber)
+  })
+
+  describe('authorization', () => {
+    test('missing token results in 401', async () => {
+      const initialNumber = (await blogsInDb()).length
+      await api.delete(`/api/blogs/${idToDelete}`)
+        .expect(401)
+      assert.strictEqual((await blogsInDb()).length, initialNumber)
+    })
+
+    test('invalid token results in 401', async () => {
+      const initialNumber = (await blogsInDb()).length
+      await api.delete(`/api/blogs/${idToDelete}`)
+        .set('Authorization', jwt.sign({ id: '664e47362a784e18e56fc1fd', username: 'root' }, 'wrong secret'))
+        .expect(401)
+      assert.strictEqual((await blogsInDb()).length, initialNumber)
+    })
+
+    test('wrong user results in 403', async () => {
+      const initialNumber = (await blogsInDb()).length
+      const wrongUserId = (await usersInDb())[1].id
+      await api.delete(`/api/blogs/${idToDelete}`)
+        .set('Authorization', await authorizationForUser(wrongUserId))
+        .expect(403)
+      assert.strictEqual((await blogsInDb()).length, initialNumber)
+    })
   })
 })
 

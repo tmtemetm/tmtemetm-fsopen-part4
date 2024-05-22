@@ -1,3 +1,6 @@
+const jwt = require('jsonwebtoken')
+
+const config = require('../utils/config')
 const User = require('../models/user')
 
 const initialUsers = [
@@ -30,7 +33,17 @@ const usersInDb = async () =>
     .populate('blogs', { title: 1, author: 1, url: 1 }))
     .map(user => ({ ...user.toJSON(), passwordHash: user.passwordHash }))
 
+const authorizationForUser = async id => {
+  const user = await User.findById(id)
+  const token = jwt.sign({
+    username: user.username,
+    id: user._id
+  }, config.SECRET)
+  return `Bearer ${token}`
+}
+
 module.exports = {
   initialUsers,
-  usersInDb
+  usersInDb,
+  authorizationForUser
 }
